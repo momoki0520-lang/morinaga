@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モリナガ性格診断（画像付き）</title>
+<style>
+body{font-family:"Helvetica Neue",sans-serif;background:linear-gradient(180deg,#fff7f2 0%,#fff 100%);margin:0;color:#333;}
+.container{max-width:420px;margin:40px auto;background:#fff;border-radius:20px;box-shadow:0 6px 24px rgba(0,0,0,0.12);padding:18px;text-align:center;}
+h1{color:#d45b00;margin:6px 0 8px;font-size:1.6rem;}
+p.lead{margin:0 0 12px;color:#666;font-size:0.95rem;}
+.question{display:block;padding:14px 8px;}
+.qtext{font-size:1.05rem;margin-bottom:12px;}
+.btn{display:block;width:92%;margin:8px auto;padding:12px;border-radius:12px;border:none;background:#ff8c42;color:#fff;font-size:1rem;}
+.btn:active{transform:translateY(1px);}
+.result{display:none;padding:10px;}
+.product{font-weight:700;color:#d45b00;margin-top:10px;font-size:1.2rem;}
+.restart{background:#666;margin-top:16px;}
+small{color:#888;display:block;margin-top:10px;}
+img.result-img{width:80%;border-radius:12px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🍫 モリナガ性格診断</h1>
+  <p class="lead"> あなたのタイプを表示します。</p>
+
+  <div id="quizArea"></div>
+  <div id="result" class="result"></div>
+</div>
+
+<script>
+const quizData = [
+  {q:"休日の過ごし方は？", a:["友達と出かける","家でのんびり"], t:["E","I"]},
+  {q:"初対面の人と会うときは？", a:["ワクワクする","少し緊張する"], t:["E","I"]},
+  {q:"集まりでは？", a:["自然と話の中心にいる","聞き役で過ごす"], t:["E","I"]},
+  {q:"新しいことを始めるときは？", a:["とりあえずやってみる","まず情報を調べる"], t:["N","S"]},
+  {q:"どんな話が好き？", a:["夢や未来の話","現実的で具体的な話"], t:["N","S"]},
+  {q:"ミスしたときの考え方は？", a:["意味があったと思う","原因を分析して次に活かす"], t:["N","S"]},
+  {q:"友達が悩んでたら？", a:["共感して寄り添う","合理的に解決策を提案する"], t:["F","T"]},
+  {q:"意見が割れたときは？", a:["みんなの気持ちを優先する","一番合理的な方法を選ぶ"], t:["F","T"]},
+  {q:"決断の基準は？", a:["気持ち（周囲の感情）重視","正しさ・効率を重視"], t:["F","T"]},
+  {q:"旅行の準備は？", a:["早めに計画を立てる","行き当たりばったりで楽しむ"], t:["J","P"]},
+  {q:"締め切り前の行動は？", a:["余裕をもって片付ける","ギリギリになってやる"], t:["J","P"]},
+  {q:"予定の決め方は？", a:["スケジュールを作る派","その場の気分で決める派"], t:["J","P"]}
+];
+
+const results8 = {
+  ENFP:{product:"ハイチュウ", desc:"次のワクワクを探して、いつでも新しい味へ！", img:"images/haichu.png"},
+  ISFJ:{product:"ミルクキャラメル", desc:"そっと包み込むやさしさ、あなたはキャラメルな人。", img:"images/milkcaramel.png"},
+  ESTJ:{product:"inゼリー", desc:"どんな場面も全力チャージ。止まらないあなたへ！", img:"images/inzerii.png"},
+  INFP:{product:"ダース（ホワイト）", desc:"やさしさの中にある強さ、一粒にこめて。", img:"images/dars_white.png"},
+  ESFP:{product:"チョコボール", desc:"ひと口で笑顔がはじける、あなたはまさにチョコボール！", img:"images/chocoball.png"},
+  ISTP:{product:"ビスケットサンド", desc:"冷静さの中に熱い芯。ギャップがあなたの魅力。", img:"images/biscuitsand.png"},
+  ENFJ:{product:"チョコモナカジャンボ", desc:"外はパリッ、中はとろける。リーダーの甘さ。", img:"images/choco_monaka.png"},
+  INTJ:{product:"BAKE", desc:"焼き固めた意志。考えるほど深まる味わい。", img:"images/bake.png"}
+};
+
+const map16to8 = {
+  ENFP:"ENFP", ENFJ:"ENFJ", ENTP:"ENFP", ENTJ:"ESTJ",
+  ESFP:"ESFP", ESFJ:"ESTJ", ESTP:"ESTJ", ESTJ:"ESTJ",
+  INFP:"INFP", INFJ:"INFP", INTP:"INTJ", INTJ:"INTJ",
+  ISFP:"ISFJ", ISFJ:"ISFJ", ISTP:"ISTP", ISTJ:"ISFJ"
+};
+
+let idx = 0;
+let score = {E:0,I:0,S:0,N:0,F:0,T:0,J:0,P:0};
+const quizArea = document.getElementById('quizArea');
+const resultEl = document.getElementById('result');
+
+function renderQuestion(){
+  if(idx >= quizData.length){ return showResult(); }
+  const item = quizData[idx];
+  quizArea.innerHTML = `
+    <div class="question">
+      <div class="qtext">Q${idx+1}. ${item.q}</div>
+      <button class="btn" onclick="select('${item.t[0]}')">${item.a[0]}</button>
+      <button class="btn" onclick="select('${item.t[1]}')">${item.a[1]}</button>
+      <small>(${idx+1}/${quizData.length})</small>
+    </div>
+  `;
+}
+
+function select(letter){
+  score[letter] += 1;
+  idx++;
+  renderQuestion();
+}
+
+function showResult(){
+  const L1 = score.E >= score.I ? 'E' : 'I';
+  const L2 = score.N >= score.S ? 'N' : 'S';
+  const L3 = score.F >= score.T ? 'F' : 'T';
+  const L4 = score.J >= score.P ? 'J' : 'P';
+  const type16 = `${L1}${L2}${L3}${L4}`;
+  const finalType = map16to8[type16] || 'ENFP';
+  const data = results8[finalType];
+
+  quizArea.innerHTML = '';
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `
+    <h2>あなたのタイプ：${finalType}</h2>
+    <div class="product">🍫 ${data.product} タイプ</div>
+    <img src="${data.img}" alt="${data.product}" class="result-img">
+    <p>${data.desc}</p>
+    ${data.img ? `<imag src="${data.img}" alt="$data.product}" width="200" style="margin-top:10px;">` : ""}
+    <p style="color:#666;font-size:0.9rem;margin-top:6px;">（判定元：${type16} → 表示タイプ：${finalType}）</p>
+    <button class="btn restart" onclick="restart()">もう一度やる</button>
+    <small>#モリナガ性格診断</small>
+  `;
+}
+
+function restart(){
+  idx = 0;
+  score = {E:0,I:0,S:0,N:0,F:0,T:0,J:0,P:0};
+  resultEl.style.display = 'none';
+  renderQuestion();
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
